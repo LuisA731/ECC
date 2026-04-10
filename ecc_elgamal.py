@@ -212,7 +212,7 @@ def descifrar_punto_ecc(C1, C2, clave_privada, a, p):
 
 
 # ═══════════════════════════════════════════════════════════════
-# PUNTO EXTRA: GRÁFICA DE LA CURVA ELÍPTICA
+# PUNTO EXTRA: GRÁFICA DE LA CURVA ELÍPTICA (ESCALA CORREGIDA)
 # ═══════════════════════════════════════════════════════════════
 def graficar_curva(a, b, p, G=None, Q=None, puntos_mensaje=None):
     """
@@ -224,12 +224,12 @@ def graficar_curva(a, b, p, G=None, Q=None, puntos_mensaje=None):
     import numpy as np
 
     fig, (ax_r, ax_fp) = plt.subplots(1, 2, figsize=(16, 7))
-    titulo = 'Curva eliptica: y2 = x3 + (a)x + b  |  Izquierda: sobre R (continua)     Derecha: sobre Fp (discreta ECC)'
+    titulo = 'Curva elíptica: y² = x³ + ax + b  |  Izquierda: sobre ℝ (continua)     Derecha: sobre 𝔽_p (discreta ECC)'
     fig.suptitle(titulo, fontsize=12, fontweight='bold')
 
     # ── Panel izquierdo: curva CONTINUA sobre ℝ ─────────────
-    # Rango amplio para capturar toda la forma de la curva
-    x_vals = np.linspace(-4, 5, 4000)
+    # Rango ajustado: ampliado a [-8, 8] para ver la intersección en X (~ -5.7)
+    x_vals = np.linspace(-8, 8, 4000)
     y2_vals = x_vals**3 + a * x_vals + b
 
     # Trazar rama superior e inferior (donde y²≥0)
@@ -238,7 +238,7 @@ def graficar_curva(a, b, p, G=None, Q=None, puntos_mensaje=None):
     y_pos = np.sqrt(y2_vals[mask])
 
     if len(x_ok) > 0:
-        # Detectar discontinuidades (saltos >0.1 en x) para no unir ramas separadas
+        # Detectar discontinuidades (saltos >0.15 en x) para no unir ramas separadas
         gaps = np.where(np.diff(x_ok) > 0.15)[0]
         segments_x = np.split(x_ok, gaps + 1)
         segments_y = np.split(y_pos, gaps + 1)
@@ -255,17 +255,19 @@ def graficar_curva(a, b, p, G=None, Q=None, puntos_mensaje=None):
     ax_r.annotate('𝒪 (punto al infinito)', xy=(0, max(y_pos)*0.95 if len(y_pos)>0 else 5),
                   fontsize=9, ha='center', color='#534AB7',
                   arrowprops=dict(arrowstyle='->', color='#534AB7', lw=1),
-                  xytext=(0, max(y_pos)*0.95 + 1.5 if len(y_pos)>0 else 6.5))
+                  xytext=(0, max(y_pos)*0.95 + 2.5 if len(y_pos)>0 else 6.5))
 
     ax_r.set_title('Sobre ℝ — curva continua', fontsize=11)
     ax_r.set_xlabel('x')
     ax_r.set_ylabel('y')
     ax_r.grid(True, alpha=0.25)
-    # Ajustar ejes para que se vea la curva completa con margen
+    
+    # Ajustar ejes dinámicamente con un margen del 10%
     if len(y_pos) > 0:
-        ymax = max(y_pos) * 1.2
+        ymax = max(y_pos) * 1.1
         ax_r.set_ylim(-ymax, ymax)
-    ax_r.set_xlim(x_vals[0], x_vals[-1])
+    # Darle un poco de margen en X para que no pegue a los bordes
+    ax_r.set_xlim(x_vals[0] - 1, x_vals[-1] + 1)
 
     # ── Panel derecho: puntos discretos sobre 𝔽_p ───────────
     xs, ys = [], []
@@ -308,7 +310,6 @@ def graficar_curva(a, b, p, G=None, Q=None, puntos_mensaje=None):
     plt.savefig(ruta, dpi=150)
     plt.show()
     print(f"\n[GRÁFICA] Guardada en: {ruta}")
-
 
 
 
